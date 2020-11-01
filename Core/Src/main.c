@@ -48,15 +48,18 @@ UART_HandleTypeDef huart3;
 PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
 /* USER CODE BEGIN PV */
-
+__ALIGN_BEGIN ETH_DMADescTypeDef  DMARxDscrTab[ETH_RXBUFNB] __ALIGN_END;/* Ethernet Rx MA Descriptor */
+__ALIGN_BEGIN ETH_DMADescTypeDef  DMATxDscrTab[ETH_TXBUFNB] __ALIGN_END;/* Ethernet Tx DMA Descriptor */
+__ALIGN_BEGIN uint8_t Rx_Buff[ETH_RXBUFNB][ETH_RX_BUF_SIZE] __ALIGN_END; /* Ethernet Receive Buffer */
+__ALIGN_BEGIN uint8_t Tx_Buff[ETH_TXBUFNB][ETH_TX_BUF_SIZE] __ALIGN_END; /* Ethernet Transmit Buffer */
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_ETH_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_USB_OTG_FS_PCD_Init(void);
+static void MX_ETH_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -94,17 +97,61 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_ETH_Init();
   MX_USART3_UART_Init();
   MX_USB_OTG_FS_PCD_Init();
+  MX_ETH_Init();
   /* USER CODE BEGIN 2 */
+  /* Initialize Tx Descriptors list: Chain Mode */
+  HAL_ETH_DMATxDescListInit(&heth, DMATxDscrTab, &Tx_Buff[0][0], ETH_TXBUFNB);
 
+  /* Initialize Rx Descriptors list: Chain Mode  */
+  HAL_ETH_DMARxDescListInit(&heth, DMARxDscrTab, &Rx_Buff[0][0], ETH_RXBUFNB);
+
+  /* Enable MAC and DMA transmission and reception */
+  HAL_ETH_Start(&heth);
+
+  /* Read Register Configuration */
+  uint32_t regvalue;
+  HAL_ETH_ReadPHYRegister(&heth, PHY_ISFR, &regvalue);
+  regvalue |= (PHY_ISFR_INT4);
+
+  /* Enable Interrupt on change of link status */
+  HAL_ETH_WritePHYRegister(&heth, PHY_ISFR , regvalue );
+
+  /* Read Register Configuration */
+  HAL_ETH_ReadPHYRegister(&heth, PHY_ISFR , &regvalue);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    if (HAL_ETH_GetReceivedFrame(&heth) == HAL_OK)
+    {
+        HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+
+        __IO ETH_DMADescTypeDef *dmarxdesc;
+        /* Release descriptors to DMA */
+        /* Point to first descriptor */
+        dmarxdesc = heth.RxFrameInfos.FSRxDesc;
+        /* Set Own bit in Rx descriptors: gives the buffers back to DMA */
+        uint32_t i;
+        for (i=0; i< heth.RxFrameInfos.SegCount; i++)
+        {
+            dmarxdesc->Status |= ETH_DMARXDESC_OWN;
+            dmarxdesc = (ETH_DMADescTypeDef *)(dmarxdesc->Buffer2NextDescAddr);
+        }
+        /* Clear Segment_Count */
+        heth.RxFrameInfos.SegCount =0;
+        /* When Rx Buffer unavailable flag is set: clear it and resume reception */
+        if ((heth.Instance->DMASR & ETH_DMASR_RBUS) != (uint32_t)RESET)
+        {
+          /* Clear RBUS ETHERNET DMA flag */
+          heth.Instance->DMASR = ETH_DMASR_RBUS;
+          /* Resume DMA reception */
+          heth.Instance->DMARPDR = 0;
+        }
+    }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
