@@ -43,6 +43,8 @@
 
 ETH_HandleTypeDef heth;
 
+I2S_HandleTypeDef hi2s2;
+
 UART_HandleTypeDef huart3;
 
 PCD_HandleTypeDef hpcd_USB_OTG_FS;
@@ -60,6 +62,7 @@ static void MX_GPIO_Init(void);
 static void MX_ETH_Init(void);
 static void MX_USART3_UART_Init(void);
 static void MX_USB_OTG_FS_PCD_Init(void);
+static void MX_I2S2_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -100,6 +103,7 @@ int main(void)
   MX_ETH_Init();
   MX_USART3_UART_Init();
   MX_USB_OTG_FS_PCD_Init();
+  MX_I2S2_Init();
   /* USER CODE BEGIN 2 */
   /* Initialize Tx Descriptors list: Chain Mode */
   HAL_ETH_DMATxDescListInit(&heth, DMATxDscrTab, &Tx_Buff[0][0], ETH_TXBUFNB);
@@ -216,7 +220,14 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART3|RCC_PERIPHCLK_CLK48;
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_USART3|RCC_PERIPHCLK_I2S
+                              |RCC_PERIPHCLK_CLK48;
+  PeriphClkInitStruct.PLLI2S.PLLI2SN = 192;
+  PeriphClkInitStruct.PLLI2S.PLLI2SP = RCC_PLLP_DIV2;
+  PeriphClkInitStruct.PLLI2S.PLLI2SR = 2;
+  PeriphClkInitStruct.PLLI2S.PLLI2SQ = 2;
+  PeriphClkInitStruct.PLLI2SDivQ = 1;
+  PeriphClkInitStruct.I2sClockSelection = RCC_I2SCLKSOURCE_PLLI2S;
   PeriphClkInitStruct.Usart3ClockSelection = RCC_USART3CLKSOURCE_PCLK1;
   PeriphClkInitStruct.Clk48ClockSelection = RCC_CLK48SOURCE_PLL;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
@@ -264,6 +275,39 @@ static void MX_ETH_Init(void)
   /* USER CODE BEGIN ETH_Init 2 */
 
   /* USER CODE END ETH_Init 2 */
+
+}
+
+/**
+  * @brief I2S2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_I2S2_Init(void)
+{
+
+  /* USER CODE BEGIN I2S2_Init 0 */
+
+  /* USER CODE END I2S2_Init 0 */
+
+  /* USER CODE BEGIN I2S2_Init 1 */
+
+  /* USER CODE END I2S2_Init 1 */
+  hi2s2.Instance = SPI2;
+  hi2s2.Init.Mode = I2S_MODE_MASTER_TX;
+  hi2s2.Init.Standard = I2S_STANDARD_PHILIPS;
+  hi2s2.Init.DataFormat = I2S_DATAFORMAT_24B;
+  hi2s2.Init.MCLKOutput = I2S_MCLKOUTPUT_ENABLE;
+  hi2s2.Init.AudioFreq = I2S_AUDIOFREQ_48K;
+  hi2s2.Init.CPOL = I2S_CPOL_LOW;
+  hi2s2.Init.ClockSource = I2S_CLOCK_PLL;
+  if (HAL_I2S_Init(&hi2s2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2S2_Init 2 */
+
+  /* USER CODE END I2S2_Init 2 */
 
 }
 
