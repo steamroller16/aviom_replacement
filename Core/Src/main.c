@@ -124,11 +124,17 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  volatile uint32_t packetCount = 0;
   while (1)
   {
     if (HAL_ETH_GetReceivedFrame(&heth) == HAL_OK)
     {
+        packetCount++;
         HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+        if (heth.RxFrameInfos.length != 100)
+        {
+            HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+        }
 
         __IO ETH_DMADescTypeDef *dmarxdesc;
         /* Release descriptors to DMA */
