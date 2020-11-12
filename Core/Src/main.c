@@ -207,9 +207,16 @@ int main(void)
         }
     }
 
-    if (HAL_I2S_GetState(&hi2s2) == HAL_I2S_STATE_READY)
+    if ((HAL_I2S_GetState(&hi2s2) == HAL_I2S_STATE_READY) &&
+        ( (AudioSamplesBufferIndex - AudioSamplesBufferOutdex >= 4) ||
+          (AudioSamplesBufferIndex < AudioSamplesBufferOutdex) ))
     {
-        HAL_I2S_Transmit_IT(&hi2s2, (uint16_t *)SinTable, sizeof(SinTable)/sizeof(SinTable[0]));
+        HAL_I2S_Transmit_IT(&hi2s2, (uint16_t *)AudioSamplesBuffer[15][AudioSamplesBufferOutdex], 4*2);
+        AudioSamplesBufferOutdex += 4;
+        if (AudioSamplesBufferOutdex >= AUDIO_SAMPLES_BUFFER_LENGTH)
+        {
+            AudioSamplesBufferOutdex = 0;
+        }
     }
     /* USER CODE END WHILE */
 
