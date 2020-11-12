@@ -152,11 +152,9 @@ int main(void)
   {
     if (HAL_ETH_GetReceivedFrame(&heth) == HAL_OK)
     {
+        HAL_GPIO_WritePin(DEBUG1_GPIO_Port, DEBUG1_Pin, GPIO_PIN_SET);
         packetCount++;
-        if (heth.RxFrameInfos.length != 100)
-        {
-        }
-        else
+        if (heth.RxFrameInfos.length == 100)
         {
             uint8_t *buffer = (uint8_t *)heth.RxFrameInfos.buffer;
             uint8_t inputChannelNum;
@@ -181,6 +179,14 @@ int main(void)
                 AudioSamplesBufferIndex = 0;
             }
         }
+        else if (heth.RxFrameInfos.length == 96)
+        {
+            HAL_GPIO_TogglePin(DEBUG2_GPIO_Port, DEBUG2_Pin);
+        }
+        else
+        {
+            HAL_GPIO_TogglePin(DEBUG3_GPIO_Port, DEBUG3_Pin);
+        }
 
         __IO ETH_DMADescTypeDef *dmarxdesc;
         /* Release descriptors to DMA */
@@ -203,18 +209,21 @@ int main(void)
           /* Resume DMA reception */
           heth.Instance->DMARPDR = 0;
         }
+        HAL_GPIO_WritePin(DEBUG1_GPIO_Port, DEBUG1_Pin, GPIO_PIN_RESET);
     }
 
     if ((HAL_I2S_GetState(&hi2s2) == HAL_I2S_STATE_READY) &&
         ( (AudioSamplesBufferIndex - AudioSamplesBufferOutdex >= 4) ||
           (AudioSamplesBufferIndex < AudioSamplesBufferOutdex) ))
     {
+        HAL_GPIO_WritePin(DEBUG4_GPIO_Port, DEBUG4_Pin, GPIO_PIN_SET);
         HAL_I2S_Transmit_IT(&hi2s2, (uint16_t *)AudioSamplesBuffer[15][AudioSamplesBufferOutdex], 4*2);
         AudioSamplesBufferOutdex += 4;
         if (AudioSamplesBufferOutdex >= AUDIO_SAMPLES_BUFFER_LENGTH)
         {
             AudioSamplesBufferOutdex = 0;
         }
+        HAL_GPIO_WritePin(DEBUG4_GPIO_Port, DEBUG4_Pin, GPIO_PIN_RESET);
     }
     /* USER CODE END WHILE */
 
