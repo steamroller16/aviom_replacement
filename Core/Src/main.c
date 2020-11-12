@@ -109,6 +109,14 @@ int main(void)
   MX_USB_OTG_FS_PCD_Init();
   MX_I2S2_Init();
   /* USER CODE BEGIN 2 */
+
+  uint16_t i;
+  for (i=0; i<sizeof(SinTable)/sizeof(SinTable[0]); i++)
+  {
+      SinTable[i] = ((SinTable[i] & 0x0000FFFF) << 16) + ((SinTable[i] & 0xFFFF0000) >> 16);
+      // SinTable[i] <<= 8; // Make sine wave level audible
+  }
+
   /* Initialize Tx Descriptors list: Chain Mode */
   HAL_ETH_DMATxDescListInit(&heth, DMATxDscrTab, &Tx_Buff[0][0], ETH_TXBUFNB);
 
