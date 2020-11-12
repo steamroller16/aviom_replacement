@@ -55,6 +55,13 @@ __ALIGN_BEGIN ETH_DMADescTypeDef  DMATxDscrTab[ETH_TXBUFNB] __ALIGN_END;/* Ether
 __ALIGN_BEGIN uint8_t Rx_Buff[ETH_RXBUFNB][ETH_RX_BUF_SIZE] __ALIGN_END; /* Ethernet Receive Buffer */
 __ALIGN_BEGIN uint8_t Tx_Buff[ETH_TXBUFNB][ETH_TX_BUF_SIZE] __ALIGN_END; /* Ethernet Transmit Buffer */
 
+#define AUDIO_SAMPLES_BUFFER_LENGTH (256)
+#define NUM_INPUT_CHANNELS          (16)
+#define NUM_OUTPUT_CHANNELS         (2)
+int32_t AudioSamplesBuffer[NUM_INPUT_CHANNELS][AUDIO_SAMPLES_BUFFER_LENGTH][NUM_OUTPUT_CHANNELS];
+uint8_t AudioSamplesBufferIndex = 0;
+uint8_t AudioSamplesBufferOutdex = 0;
+
 static int32_t SinTable[480] = {
     0,7,13,20,27,33,40,47,53,60,67,73,80,87,93,100,106,113,119,126,132,139,145,152,158,164,171,177,183,189,196,202,208,214,220,226,232,238,244,250,255,261,267,273,278,284,289,295,300,306,311,316,322,327,332,337,342,347,352,357,361,366,371,375,380,384,389,393,397,401,405,409,413,417,421,425,429,432,436,439,443,446,449,452,455,458,461,464,467,470,472,475,477,479,482,484,486,488,490,492,494,495,497,498,500,501,502,504,505,506,507,507,508,509,509,510,510,511,511,511,511,511,511,511,510,510,509,509,508,507,507,506,505,504,502,501,500,498,497,495,494,492,490,488,486,484,482,479,477,475,472,470,467,464,461,458,455,452,449,446,443,439,436,432,429,425,421,417,413,409,405,401,397,393,389,384,380,375,371,366,361,357,352,347,342,337,332,327,322,316,311,306,300,295,289,284,278,273,267,261,256,250,244,238,232,226,220,214,208,202,196,189,183,177,171,164,158,152,145,139,132,126,119,113,106,100,93,87,80,73,67,60,53,47,40,33,27,20,13,7,0,-7,-13,-20,-27,-33,-40,-47,-53,-60,-67,-73,-80,-87,-93,-100,-106,-113,-119,-126,-132,-139,-145,-152,-158,-164,-171,-177,-183,-189,-196,-202,-208,-214,-220,-226,-232,-238,-244,-250,-255,-261,-267,-273,-278,-284,-289,-295,-300,-306,-311,-316,-322,-327,-332,-337,-342,-347,-352,-357,-361,-366,-371,-375,-380,-384,-389,-393,-397,-401,-405,-409,-413,-417,-421,-425,-429,-432,-436,-439,-443,-446,-449,-452,-455,-458,-461,-464,-467,-470,-472,-475,-477,-479,-482,-484,-486,-488,-490,-492,-494,-495,-497,-498,-500,-501,-502,-504,-505,-506,-507,-507,-508,-509,-509,-510,-510,-511,-511,-511,-511,-511,-511,-511,-510,-510,-509,-509,-508,-507,-507,-506,-505,-504,-502,-501,-500,-498,-497,-495,-494,-492,-490,-488,-486,-484,-482,-479,-477,-475,-472,-470,-467,-464,-461,-458,-455,-452,-449,-446,-443,-439,-436,-432,-429,-425,-421,-417,-413,-409,-405,-401,-397,-393,-389,-384,-380,-375,-371,-366,-361,-357,-352,-347,-342,-337,-332,-327,-322,-316,-311,-306,-300,-295,-289,-284,-278,-273,-267,-261,-256,-250,-244,-238,-232,-226,-220,-214,-208,-202,-196,-189,-183,-177,-171,-164,-158,-152,-145,-139,-132,-126,-119,-113,-106,-100,-93,-87,-80,-73,-67,-60,-53,-47,-40,-33,-27,-20,-13,-7
 };
@@ -150,6 +157,31 @@ int main(void)
         if (heth.RxFrameInfos.length != 100)
         {
             HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+        }
+        else
+        {
+            uint8_t *buffer = (uint8_t *)heth.RxFrameInfos.buffer;
+            uint8_t inputChannelNum;
+
+            for (inputChannelNum=0; inputChannelNum<16; inputChannelNum++)
+            {
+                AudioSamplesBuffer[inputChannelNum][AudioSamplesBufferIndex][0] =
+                    (buffer[4+inputChannelNum*3+0] << 24) +
+                    (buffer[4+inputChannelNum*3+1] << 16) +
+                    (buffer[4+inputChannelNum*3+2] <<  8);
+                // AudioSamplesBuffer[inputChannelNum][AudioSamplesBufferIndex][0] >>= 16; // Volume adjust
+                AudioSamplesBuffer[inputChannelNum][AudioSamplesBufferIndex][0] =
+                    ((AudioSamplesBuffer[inputChannelNum][AudioSamplesBufferIndex][0] & 0x0000FFFF) << 16) +
+                    ((AudioSamplesBuffer[inputChannelNum][AudioSamplesBufferIndex][0] & 0xFFFF0000) >> 16);
+                AudioSamplesBuffer[inputChannelNum][AudioSamplesBufferIndex][1] =
+                    AudioSamplesBuffer[inputChannelNum][AudioSamplesBufferIndex][0];
+            }
+
+            AudioSamplesBufferIndex++;
+            if (AudioSamplesBufferIndex >= AUDIO_SAMPLES_BUFFER_LENGTH)
+            {
+                AudioSamplesBufferIndex = 0;
+            }
         }
 
         __IO ETH_DMADescTypeDef *dmarxdesc;
