@@ -157,26 +157,32 @@ int main(void)
         if (heth.RxFrameInfos.length == 100)
         {
             uint8_t *buffer = (uint8_t *)heth.RxFrameInfos.buffer;
-            uint8_t inputChannelNum;
+            uint8_t sampleIndex = 0;
+            uint8_t inputChannelNum = 0;
 
-            for (inputChannelNum=0; inputChannelNum<16; inputChannelNum++)
+            for (sampleIndex = 0; sampleIndex < 32; sampleIndex++)
             {
                 AudioSamplesBuffer[inputChannelNum][AudioSamplesBufferIndex][0] =
-                    (buffer[4+inputChannelNum*3+0] << 24) +
-                    (buffer[4+inputChannelNum*3+1] << 16) +
-                    (buffer[4+inputChannelNum*3+2] <<  8);
+                    (buffer[4+sampleIndex*3+0] << 24) +
+                    (buffer[4+sampleIndex*3+1] << 16) +
+                    (buffer[4+sampleIndex*3+2] <<  8);
                 // AudioSamplesBuffer[inputChannelNum][AudioSamplesBufferIndex][0] >>= 16; // Volume adjust
                 AudioSamplesBuffer[inputChannelNum][AudioSamplesBufferIndex][0] =
                     ((AudioSamplesBuffer[inputChannelNum][AudioSamplesBufferIndex][0] & 0x0000FFFF) << 16) +
                     ((AudioSamplesBuffer[inputChannelNum][AudioSamplesBufferIndex][0] & 0xFFFF0000) >> 16);
                 AudioSamplesBuffer[inputChannelNum][AudioSamplesBufferIndex][1] =
                     AudioSamplesBuffer[inputChannelNum][AudioSamplesBufferIndex][0];
-            }
 
-            AudioSamplesBufferIndex++;
-            if (AudioSamplesBufferIndex >= AUDIO_SAMPLES_BUFFER_LENGTH)
-            {
-                AudioSamplesBufferIndex = 0;
+                inputChannelNum++;
+                if (inputChannelNum == 16)
+                {
+                    inputChannelNum = 0;
+                    AudioSamplesBufferIndex++;
+                    if (AudioSamplesBufferIndex >= AUDIO_SAMPLES_BUFFER_LENGTH)
+                    {
+                        AudioSamplesBufferIndex = 0;
+                    }
+                }
             }
         }
         else if (heth.RxFrameInfos.length == 96)
