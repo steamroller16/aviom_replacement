@@ -153,10 +153,8 @@ int main(void)
     if (HAL_ETH_GetReceivedFrame(&heth) == HAL_OK)
     {
         packetCount++;
-        HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
         if (heth.RxFrameInfos.length != 100)
         {
-            HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
         }
         else
         {
