@@ -154,18 +154,24 @@ int main(void)
     {
         HAL_GPIO_WritePin(DEBUG1_GPIO_Port, DEBUG1_Pin, GPIO_PIN_SET);
         packetCount++;
-        if (heth.RxFrameInfos.length == 100)
+        if (heth.RxFrameInfos.length == 100 || heth.RxFrameInfos.length == 96)
         {
+            if (heth.RxFrameInfos.length == 96)
+            {
+                HAL_GPIO_TogglePin(DEBUG2_GPIO_Port, DEBUG2_Pin);
+            }
+
             uint8_t *buffer = (uint8_t *)heth.RxFrameInfos.buffer;
             uint8_t sampleIndex = 0;
             uint8_t inputChannelNum = 0;
+            uint8_t offset = heth.RxFrameInfos.length == 100 ? 4 : 0;
 
             for (sampleIndex = 0; sampleIndex < 32; sampleIndex++)
             {
                 AudioSamplesBuffer[inputChannelNum][AudioSamplesBufferIndex][0] =
-                    (buffer[4+sampleIndex*3+0] << 24) +
-                    (buffer[4+sampleIndex*3+1] << 16) +
-                    (buffer[4+sampleIndex*3+2] <<  8);
+                    (buffer[offset+sampleIndex*3+0] << 24) +
+                    (buffer[offset+sampleIndex*3+1] << 16) +
+                    (buffer[offset+sampleIndex*3+2] <<  8);
                 // AudioSamplesBuffer[inputChannelNum][AudioSamplesBufferIndex][0] >>= 16; // Volume adjust
                 AudioSamplesBuffer[inputChannelNum][AudioSamplesBufferIndex][0] =
                     ((AudioSamplesBuffer[inputChannelNum][AudioSamplesBufferIndex][0] & 0x0000FFFF) << 16) +
@@ -184,10 +190,6 @@ int main(void)
                     }
                 }
             }
-        }
-        else if (heth.RxFrameInfos.length == 96)
-        {
-            HAL_GPIO_TogglePin(DEBUG2_GPIO_Port, DEBUG2_Pin);
         }
         else
         {
