@@ -225,7 +225,7 @@ int main(void)
           (AudioSamplesBufferIndex < AudioSamplesBufferOutdex) ))
     {
         HAL_GPIO_WritePin(DEBUG4_GPIO_Port, DEBUG4_Pin, GPIO_PIN_SET);
-        HAL_I2S_Transmit_IT(&hi2s2, (uint16_t *)AudioSamplesBuffer[15][AudioSamplesBufferOutdex], 4*2);
+        HAL_I2S_Transmit_IT(&hi2s2, (uint16_t *)AudioSamplesBuffer[4][AudioSamplesBufferOutdex], 4*2);
         AudioSamplesBufferOutdex += 4;
         if (AudioSamplesBufferOutdex >= AUDIO_SAMPLES_BUFFER_LENGTH)
         {
