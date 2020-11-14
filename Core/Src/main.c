@@ -331,7 +331,7 @@ static void MX_ETH_Init(void)
   heth.Init.MACAddr[3] =   0x00;
   heth.Init.MACAddr[4] =   0x00;
   heth.Init.MACAddr[5] =   0x00;
-  heth.Init.RxMode = ETH_RXPOLLING_MODE;
+  heth.Init.RxMode = ETH_RXINTERRUPT_MODE;
   heth.Init.ChecksumMode = ETH_CHECKSUM_BY_HARDWARE;
   heth.Init.MediaInterface = ETH_MEDIA_INTERFACE_RMII;
 

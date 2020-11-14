@@ -1,9 +1,10 @@
 #MicroXplorer Configuration settings - do not modify
-ETH.IPParameters=MediaInterface,PHY_Name,PHY_Value,PhyAddress
+ETH.IPParameters=MediaInterface,PHY_Name,PHY_Value,PhyAddress,RxMode
 ETH.MediaInterface=ETH_MEDIA_INTERFACE_RMII
 ETH.PHY_Name=LAN8742A_PHY_ADDRESS
 ETH.PHY_Value=0
 ETH.PhyAddress=0
+ETH.RxMode=ETH_RXINTERRUPT_MODE
 File.Version=6
 I2S2.AudioFreq=I2S_AUDIOFREQ_48K
 I2S2.DataFormat=I2S_DATAFORMAT_32B
@@ -72,6 +73,7 @@ MxCube.Version=6.0.1
 MxDb.Version=DB.6.0.0
 NVIC.BusFault_IRQn=true\:0\:0\:false\:false\:true\:true\:false
 NVIC.DebugMonitor_IRQn=true\:0\:0\:false\:false\:true\:true\:false
+NVIC.ETH_IRQn=true\:0\:0\:false\:false\:true\:false\:true
 NVIC.ForceEnableDMAVector=true
 NVIC.HardFault_IRQn=true\:0\:0\:false\:false\:true\:true\:false
 NVIC.MemoryManagement_IRQn=true\:0\:0\:false\:false\:true\:true\:false
