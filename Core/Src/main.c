@@ -172,7 +172,7 @@ int main(void)
                     (buffer[offset+sampleIndex*3+0] << 24) +
                     (buffer[offset+sampleIndex*3+1] << 16) +
                     (buffer[offset+sampleIndex*3+2] <<  8);
-                // AudioSamplesBuffer[inputChannelNum][AudioSamplesBufferIndex][0] >>= 16; // Volume adjust
+                AudioSamplesBuffer[inputChannelNum][AudioSamplesBufferIndex][0] <<= 2; // Volume adjust
                 AudioSamplesBuffer[inputChannelNum][AudioSamplesBufferIndex][0] =
                     ((AudioSamplesBuffer[inputChannelNum][AudioSamplesBufferIndex][0] & 0x0000FFFF) << 16) +
                     ((AudioSamplesBuffer[inputChannelNum][AudioSamplesBufferIndex][0] & 0xFFFF0000) >> 16);
