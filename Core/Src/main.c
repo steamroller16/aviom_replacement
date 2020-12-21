@@ -223,12 +223,12 @@ int main(void)
     }
 
     if ((HAL_I2S_GetState(&hi2s2) == HAL_I2S_STATE_READY) &&
-        ( (AudioSamplesBufferIndex - AudioSamplesBufferOutdex >= 4) ||
+        ( (AudioSamplesBufferIndex - AudioSamplesBufferOutdex >= 64) ||
           (AudioSamplesBufferIndex < AudioSamplesBufferOutdex) ))
     {
         HAL_GPIO_WritePin(DEBUG4_GPIO_Port, DEBUG4_Pin, GPIO_PIN_SET);
-        HAL_I2S_Transmit_IT(&hi2s2, (uint16_t *)AudioSamplesBuffer[4][AudioSamplesBufferOutdex], 4*2);
-        AudioSamplesBufferOutdex += 4;
+        HAL_I2S_Transmit_IT(&hi2s2, (uint16_t *)AudioSamplesBuffer[0][AudioSamplesBufferOutdex], 64*2);
+        AudioSamplesBufferOutdex += 64;
         if (AudioSamplesBufferOutdex >= AUDIO_SAMPLES_BUFFER_LENGTH)
         {
             AudioSamplesBufferOutdex = 0;
