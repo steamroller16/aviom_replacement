@@ -124,7 +124,7 @@ int main(void)
   for (i=0; i<sizeof(SinTable)/sizeof(SinTable[0]); i++)
   {
       SinTable[i] = ((SinTable[i] & 0x0000FFFF) << 16) + ((SinTable[i] & 0xFFFF0000) >> 16);
-      // SinTable[i] <<= 8; // Make sine wave level audible
+      SinTable[i] <<= 8; // Make sine wave level audible
   }
 
   /* Initialize Tx Descriptors list: Chain Mode */
