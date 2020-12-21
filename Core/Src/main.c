@@ -150,20 +150,13 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  volatile uint32_t packetCount = 0;
   while (1)
   {
     if (HAL_ETH_GetReceivedFrame(&heth) == HAL_OK)
     {
         HAL_GPIO_WritePin(DEBUG1_GPIO_Port, DEBUG1_Pin, GPIO_PIN_SET);
-        packetCount++;
-        if (heth.RxFrameInfos.length == 100 || heth.RxFrameInfos.length == 96)
+        if (heth.RxFrameInfos.length == 100)
         {
-            if (heth.RxFrameInfos.length == 96)
-            {
-                HAL_GPIO_TogglePin(DEBUG2_GPIO_Port, DEBUG2_Pin);
-            }
-
             uint8_t *buffer = (uint8_t *)heth.RxFrameInfos.buffer;
             uint8_t sampleIndex = 0;
             uint8_t inputChannelNum = 0;
