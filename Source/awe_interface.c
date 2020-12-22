@@ -6,6 +6,8 @@ Description :
 ------------------------------------------------------------------------------*/
 
 /* Includes ------------------------------------------------------------------*/
+#include "main.h"
+
 #include "AWECore.h"
 #include "TargetProcessor.h"
 #include "StandardDefs.h"
@@ -86,6 +88,11 @@ static IOPinDescriptor s_OutputPin = { 0 };
 //-----------------------------------------------------------------------------
 void AweInterface_Init(void)
 {
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+    DWT->LAR = 0xC5ACCE55;
+    DWT->CYCCNT = 0;
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+
     memset(&g_AWEInstance, 0, sizeof(AWEInstance) );
 
     g_AWEInstance.pInputPin = &s_InputPin;
@@ -315,3 +322,25 @@ void AWEIdleLoop(void)
 }   // End AWEIdleLoop
 
 #endif
+
+
+//-----------------------------------------------------------------------------
+// METHOD:  aweuser_getCycleCount
+// PURPOSE: Returns the current value in the counter
+//-----------------------------------------------------------------------------
+UINT32 aweuser_getCycleCount(void)
+{
+    return DWT->CYCCNT;
+
+}   // End aweuser_getCycleCount
+
+
+//-----------------------------------------------------------------------------
+// METHOD:  aweuser_getElapsedCycles
+// PURPOSE: Returns the cycle count between start time and end time
+//-----------------------------------------------------------------------------
+UINT32 aweuser_getElapsedCycles(UINT32 nStartTime, UINT32 nEndTime)
+{
+    return nEndTime - nStartTime;
+
+}   // End aweuser_getElapsedCycles
