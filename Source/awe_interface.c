@@ -14,11 +14,14 @@ Description :
 #include "Errors.h"
 #include "ModuleList.h"
 
+#include "awe_tuning_hw_interface.h"
+
 
 /* Local Macros/Constants/Structures -----------------------------------------*/
 // Version Information
 #define USER_VER 20190801
 
+// Various parameters
 #define NUM_CORES 1
 #define CORE_ID 0
 #define CORE_SPEED 216e6f
@@ -35,22 +38,18 @@ Description :
 #define IS_COMPLEX 0
 #define SAMPLE_SIZE_IN_BYTES 4
 
-
 // Specify the size of each of the heaps on this target
 #define MASTER_HEAP_SIZE		(1024*5)
 #define FASTB_HEAP_SIZE			(1024*5)
 #define SLOW_HEAP_SIZE			(1024*5)
 
-
-/* Define the rest of the target for the instance initialization */
-#define MAX_COMMAND_BUFFER_LEN	(256 + 8)	//UINT32s - space for 256 samples + header
+/* Define number of input and output channels */
 #define NUM_INPUT_CHANNELS      2
 #define NUM_OUTPUT_CHANNELS     2
 
 
-
 /* Public Global Variables ---------------------------------------------------*/
-// This awe instance
+// AWE instance
 AWEInstance g_AWEInstance;
 
 // Heap
@@ -65,9 +64,6 @@ const void * g_module_descriptor_table[] =
     (void *)LISTOFCLASSOBJECTS
 };
 UINT32 g_module_descriptor_table_size = sizeof(g_module_descriptor_table) / sizeof(g_module_descriptor_table[0]);
-
-// Packet buffer
-UINT32 g_packet_buffer[MAX_COMMAND_BUFFER_LEN];
 
 
 /* Private Global Variables --------------------------------------------------*/
@@ -124,14 +120,16 @@ void AweInterface_Init(void)
     g_AWEInstance.pFastHeapB = g_FastbHeap;
     g_AWEInstance.pSlowHeap  = g_SlowHeap;
 
-    g_AWEInstance.pPacketBuffer = g_packet_buffer;
-    g_AWEInstance.pReplyBuffer = g_packet_buffer;
-    g_AWEInstance.packetBufferSize = MAX_COMMAND_BUFFER_LEN;
+    g_AWEInstance.pPacketBuffer = AweTuningHwInterface_GetPacketBufferPointer();
+    g_AWEInstance.pReplyBuffer = AweTuningHwInterface_GetReplyBufferPointer();
+    g_AWEInstance.packetBufferSize = AweTuningHwInterface_GetMaxPacketBufferSizeWords();
 
     // Initialize AWE signal processing instance
     awe_init(&g_AWEInstance);
 
-}   // End AWEInstanceInit
+    // Init tuning hardware interface
+    AweTuningHwInterface_Init(&g_AWEInstance);
+}
 
 #if 0
 //-----------------------------------------------------------------------------
