@@ -32,9 +32,9 @@ Description :
 #define AUDIO_SAMPLE_RATE       (48000.0f)
 
 // Specify the size of each of the heaps on this target
-#define MASTER_HEAP_SIZE        (1024*5)
-#define FASTB_HEAP_SIZE         (1024*5)
-#define SLOW_HEAP_SIZE          (1024*5)
+#define MASTER_HEAP_SIZE        (1024*8)
+#define FASTB_HEAP_SIZE         (1024*8)
+#define SLOW_HEAP_SIZE          (1024*8)
 
 
 /* Public Global Variables ---------------------------------------------------*/
