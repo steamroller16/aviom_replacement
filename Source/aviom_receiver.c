@@ -7,6 +7,7 @@ Description : Handles reception of audio packets over ethernet from aviom system
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "awe_interface.h"
 
 
 /* Local Macros/Constants/Structures -----------------------------------------*/
@@ -118,7 +119,7 @@ void HAL_ETH_RxCpltCallback(ETH_HandleTypeDef *dummy)
             if (AudioSamplesBufferIndex == AWE_INTERFACE_AUDIO_BLOCK_SIZE)
             {
                 AudioSamplesBufferIndex = 0;
-                // TODO: add samples to AWE
+                AweInterface_HandleInputSamplesBlock(&AudioSamplesBuffer[0][0]);
             }
         }
         else
