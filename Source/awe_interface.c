@@ -238,8 +238,8 @@ void AweInterface_MainLoopProcess(void)
    // Process any local controls
     if (awe_audioIsStarted(&AweInstance))
     {
-        UINT32 classID;
-        INT32 nValue;
+        // UINT32 classID;
+        // INT32 nValue;
 
         // Perform any needed deferred processing
         while (DeferredProcessingRequired || moreProcessingRequired)
