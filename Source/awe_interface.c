@@ -61,6 +61,8 @@ static const UINT32 ModuleDescriptorTableSize = sizeof(ModuleDescriptorTable) / 
 static IOPinDescriptor s_InputPin =  { 0 };
 static IOPinDescriptor s_OutputPin = { 0 };
 
+static bool AudioPump1Active = false;
+static bool AudioPump2Active = false;
 static bool DeferredProcessingRequired = false;
 
 
@@ -165,21 +167,19 @@ void AweInterface_HandleInputSamplesBlock(int32_t *inputSamplesBlock)
                 // If higher priority level processing ready pend an interrupt for it
                 if (layoutMask & 1)
                 {
-                    // if (!g_bAudioPump1Active)
-                    // {
-                        // NVIC_SetPendingIRQ(AudioWeaverPump_IRQ1);
-                    // }
-                    DeferredProcessingRequired |= awe_audioPump(&AweInstance, 0);
+                    if (!AudioPump1Active)
+                    {
+                        __HAL_GPIO_EXTI_GENERATE_SWIT(SW_INT1_Pin);
+                    }
                 }
 
                 // If lower priority level processing ready pend an interrupt for it
                 if (layoutMask & 2)
                 {
-                    // if (!g_bAudioPump2Active)
-                    // {
-                        // NVIC_SetPendingIRQ(AudioWeaverPump_IRQ2);
-                    // }
-                    DeferredProcessingRequired |= awe_audioPump(&AweInstance, 1);
+                    if (!AudioPump2Active)
+                    {
+                        __HAL_GPIO_EXTI_GENERATE_SWIT(SW_INT2_Pin);
+                    }
                 }
             }
 
@@ -192,37 +192,42 @@ void AweInterface_HandleInputSamplesBlock(int32_t *inputSamplesBlock)
     }
 }   // End BSP_AUDIO_IN_DMA_Handler
 
-#if 0
-//-----------------------------------------------------------------------------
-// METHOD:  AudioWeaver Pump Interrupt Handler
-// PURPOSE: Perform AudioWeaver Processing
-//-----------------------------------------------------------------------------
-void AudioWeaverPump_IRQHandler1(void)
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-    g_bAudioPump1Active = TRUE;
+    if (GPIO_Pin == SW_INT1_Pin)
+    {
+        AudioPump1Active = true;
+        if (awe_audioPump(&AweInstance, 0))
+        {
+            DeferredProcessingRequired = true;
+        }
+        AudioPump1Active = false;
+    }
+    else if (GPIO_Pin == SW_INT2_Pin)
+    {
+        AudioPump2Active = true;
+        if (awe_audioPump(&AweInstance, 1))
+        {
+            DeferredProcessingRequired = true;
+        }
+        AudioPump2Active = false;
+    }
+}
 
-    NVIC_ClearPendingIRQ(AudioWeaverPump_IRQ1);
-
-    g_bDeferredProcessingRequired |= awe_audioPump(&AweInstance, 0);
-
-    g_bAudioPump1Active = FALSE;
-
-}   // End AudioWeaverPump_IRQHandler
-
-
+#if 0
 //-----------------------------------------------------------------------------
 // METHOD:  AudioWeaver Pump Interrupt Handler
 // PURPOSE: Perform AudioWeaver Processing
 //-----------------------------------------------------------------------------
 void AudioWeaverPump_IRQHandler2(void)
 {
-    g_bAudioPump2Active = TRUE;
+    AudioPump2Active = TRUE;
 
     NVIC_ClearPendingIRQ(AudioWeaverPump_IRQ2);
 
     g_bDeferredProcessingRequired |= awe_audioPump(&AweInstance, 1);
 
-    g_bAudioPump2Active = FALSE;
+    AudioPump2Active = FALSE;
 
 }   // End AudioWeaverPump_IRQHandler
 #endif
