@@ -10,9 +10,8 @@ Description :
 
 
 /* Local Macros/Constants/Structures -----------------------------------------*/
-#define AUDIO_SAMPLES_BUFFER_LENGTH (256)
+#define AUDIO_SAMPLES_BUFFER_LENGTH (32)
 #define NUM_INPUT_CHANNELS          (16)
-#define NUM_OUTPUT_CHANNELS         (2)
 
 
 /* Public Global Variables ---------------------------------------------------*/
@@ -34,9 +33,8 @@ static int32_t SinTable[] = {
     0, 0, 27, 27, 53, 53, 80, 80, 106, 106, 132, 132, 158, 158, 183, 183, 208, 208, 232, 232, 255, 255, 278, 278, 300, 300, 322, 322, 342, 342, 361, 361, 380, 380, 397, 397, 413, 413, 429, 429, 443, 443, 455, 455, 467, 467, 477, 477, 486, 486, 494, 494, 500, 500, 505, 505, 508, 508, 510, 510, 511, 511, 510, 510, 508, 508, 505, 505, 500, 500, 494, 494, 486, 486, 477, 477, 467, 467, 455, 455, 443, 443, 429, 429, 413, 413, 397, 397, 380, 380, 361, 361, 342, 342, 322, 322, 300, 300, 278, 278, 256, 256, 232, 232, 208, 208, 183, 183, 158, 158, 132, 132, 106, 106, 80, 80, 53, 53, 27, 27, 0, 0, -27, -27, -53, -53, -80, -80, -106, -106, -132, -132, -158, -158, -183, -183, -208, -208, -232, -232, -255, -255, -278, -278, -300, -300, -322, -322, -342, -342, -361, -361, -380, -380, -397, -397, -413, -413, -429, -429, -443, -443, -455, -455, -467, -467, -477, -477, -486, -486, -494, -494, -500, -500, -505, -505, -508, -508, -510, -510, -511, -511, -510, -510, -508, -508, -505, -505, -500, -500, -494, -494, -486, -486, -477, -477, -467, -467, -455, -455, -443, -443, -429, -429, -413, -413, -397, -397, -380, -380, -361, -361, -342, -342, -322, -322, -300, -300, -278, -278, -256, -256, -232, -232, -208, -208, -183, -183, -158, -158, -132, -132, -106, -106, -80, -80, -53, -53, -27, -27,
 };
 
-static int32_t AudioSamplesBuffer[NUM_INPUT_CHANNELS][AUDIO_SAMPLES_BUFFER_LENGTH][NUM_OUTPUT_CHANNELS];
+static int32_t AudioSamplesBuffer[AUDIO_SAMPLES_BUFFER_LENGTH][NUM_INPUT_CHANNELS];
 static uint8_t AudioSamplesBufferIndex = 0;
-static uint8_t AudioSamplesBufferOutdex = 0;
 
 
 /* Private Function Prototypes -----------------------------------------------*/
@@ -75,6 +73,7 @@ void AviomReceiver_Init(void)
 
 void AviomReceiver_MainLoopProcess(void)
 {
+    #if 0
     if ((HAL_I2S_GetState(&hi2s2) == HAL_I2S_STATE_READY) &&
         ( (AudioSamplesBufferIndex - AudioSamplesBufferOutdex >= 64) ||
           (AudioSamplesBufferIndex < AudioSamplesBufferOutdex) ))
@@ -88,42 +87,38 @@ void AviomReceiver_MainLoopProcess(void)
         }
         HAL_GPIO_WritePin(DEBUG4_GPIO_Port, DEBUG4_Pin, GPIO_PIN_RESET);
     }
+    #endif
 }
 
 void HAL_ETH_RxCpltCallback(ETH_HandleTypeDef *dummy)
 {
-    HAL_GPIO_WritePin(DEBUG1_GPIO_Port, DEBUG1_Pin, GPIO_PIN_SET);
     if (HAL_ETH_GetReceivedFrame_IT(&heth) == HAL_OK)
     {
         if (heth.RxFrameInfos.length == 100)
         {
             uint8_t *buffer = (uint8_t *)heth.RxFrameInfos.buffer;
             uint8_t sampleIndex = 0;
-            uint8_t inputChannelNum = 0;
 
-            for (sampleIndex = 0; sampleIndex < 32; sampleIndex++)
+            for (sampleIndex = 0; sampleIndex < 16; sampleIndex++)
             {
-                AudioSamplesBuffer[inputChannelNum][AudioSamplesBufferIndex][0] =
-                    (buffer[4+sampleIndex*3+0] << 24) +
-                    (buffer[4+sampleIndex*3+1] << 16) +
-                    (buffer[4+sampleIndex*3+2] <<  8);
-                AudioSamplesBuffer[inputChannelNum][AudioSamplesBufferIndex][0] <<= 6; // Volume adjust
-                AudioSamplesBuffer[inputChannelNum][AudioSamplesBufferIndex][0] =
-                    ((AudioSamplesBuffer[inputChannelNum][AudioSamplesBufferIndex][0] & 0x0000FFFF) << 16) +
-                    ((AudioSamplesBuffer[inputChannelNum][AudioSamplesBufferIndex][0] & 0xFFFF0000) >> 16);
-                AudioSamplesBuffer[inputChannelNum][AudioSamplesBufferIndex][1] =
-                    AudioSamplesBuffer[inputChannelNum][AudioSamplesBufferIndex][0];
+                AudioSamplesBuffer[AudioSamplesBufferIndex][sampleIndex] =
+                    (buffer[0] << 24) + (buffer[1] << 16) + (buffer[2] << 8);
+                buffer += 3;
+            }
+            AudioSamplesBufferIndex++;
 
-                inputChannelNum++;
-                if (inputChannelNum == 16)
-                {
-                    inputChannelNum = 0;
-                    AudioSamplesBufferIndex++;
-                    if (AudioSamplesBufferIndex >= AUDIO_SAMPLES_BUFFER_LENGTH)
-                    {
-                        AudioSamplesBufferIndex = 0;
-                    }
-                }
+            for (sampleIndex = 0; sampleIndex < 16; sampleIndex++)
+            {
+                AudioSamplesBuffer[AudioSamplesBufferIndex][sampleIndex] =
+                    (buffer[0] << 24) + (buffer[1] << 16) + (buffer[2] << 8);
+                buffer += 3;
+            }
+            AudioSamplesBufferIndex++;
+
+            if (AudioSamplesBufferIndex == AUDIO_SAMPLES_BUFFER_LENGTH)
+            {
+                AudioSamplesBufferIndex = 0;
+                // TODO: add samples to AWE
             }
         }
         else
@@ -153,5 +148,4 @@ void HAL_ETH_RxCpltCallback(ETH_HandleTypeDef *dummy)
           heth.Instance->DMARPDR = 0;
         }
     }
-    HAL_GPIO_WritePin(DEBUG1_GPIO_Port, DEBUG1_Pin, GPIO_PIN_RESET);
 }
