@@ -44,7 +44,7 @@ void AweTuningHwInterface_Init(AWEInstance * aweInstance)
     HAL_UART_ReceiverTimeout_Config(&huart3, 20);
     HAL_UART_EnableReceiverTimeout(&huart3);
     __HAL_UART_ENABLE_IT(&huart3, UART_IT_RTO);
-    HAL_UART_Receive_IT(&huart3, (UINT8 *)&PacketBufferEncoded[0], MAX_PACKET_BUFFER_ENCODED_SIZE_BYTES);
+    HAL_UART_Receive_DMA(&huart3, (UINT8 *)&PacketBufferEncoded[0], MAX_PACKET_BUFFER_ENCODED_SIZE_BYTES);
 }
 
 UINT32 * AweTuningHwInterface_GetPacketBufferPointer(void)
@@ -92,7 +92,7 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
                     if (encodeReturn == COMPLETE_NEW_PACKET)
                     {
                         // Transmit encoded packet
-                        HAL_UART_Transmit_IT(&huart3, (UINT8 *)&ReplyBufferEncoded[0], countTransmit);
+                        HAL_UART_Transmit_DMA(&huart3, (UINT8 *)&ReplyBufferEncoded[0], countTransmit);
                         break;
                     }
                 }
@@ -115,7 +115,7 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
                     if (encodeReturn == COMPLETE_NEW_PACKET)
                     {
                         // Transmit encoded packet
-                        HAL_UART_Transmit_IT(&huart3, (UINT8 *)&ReplyBufferEncoded[0], countTransmit);
+                        HAL_UART_Transmit_DMA(&huart3, (UINT8 *)&ReplyBufferEncoded[0], countTransmit);
                         break;
                     }
                 }
@@ -125,7 +125,7 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
             else if (decodeReturn == E_BADPACKET)
             {
                 // Go back to listening
-                HAL_UART_Receive_IT(&huart3, (UINT8 *)&PacketBufferEncoded[0], MAX_PACKET_BUFFER_ENCODED_SIZE_BYTES);
+                HAL_UART_Receive_DMA(&huart3, (UINT8 *)&PacketBufferEncoded[0], MAX_PACKET_BUFFER_ENCODED_SIZE_BYTES);
                 break;
             }
         }
@@ -140,5 +140,5 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
     // When transmission is complete, go back to listening again
-    HAL_UART_Receive_IT(&huart3, (UINT8 *)&PacketBufferEncoded[0], MAX_PACKET_BUFFER_ENCODED_SIZE_BYTES);
+    HAL_UART_Receive_DMA(&huart3, (UINT8 *)&PacketBufferEncoded[0], MAX_PACKET_BUFFER_ENCODED_SIZE_BYTES);
 }
