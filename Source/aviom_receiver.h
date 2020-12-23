@@ -1,11 +1,11 @@
 /*-----------------------------------------------------------------------------
-File Name   :
+File Name   : aviom_receiver.h
 Author      : Sam Soundar
-Date        : yyyy-mm-dd
-Description :
+Date        : 2020-12-22
+Description : Handles reception of audio packets over ethernet from aviom system
 ------------------------------------------------------------------------------*/
-#ifndef TEMPLATE_H
-#define TEMPLATE_H
+#ifndef AVIOM_RECEIVER_H
+#define AVIOM_RECEIVER_H
 
 /* Includes ------------------------------------------------------------------*/
 

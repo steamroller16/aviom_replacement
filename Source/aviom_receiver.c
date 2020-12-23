@@ -1,8 +1,8 @@
 /*-----------------------------------------------------------------------------
-File Name   :
+File Name   : aviom_receiver.c
 Author      : Sam Soundar
-Date        : yyyy-mm-dd
-Description :
+Date        : 2020-12-22
+Description : Handles reception of audio packets over ethernet from aviom system
 ------------------------------------------------------------------------------*/
 
 /* Includes ------------------------------------------------------------------*/
