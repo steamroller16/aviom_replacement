@@ -122,10 +122,6 @@ void HAL_ETH_RxCpltCallback(ETH_HandleTypeDef *dummy)
                 AweInterface_HandleInputSamplesBlock(&AudioSamplesBuffer[0][0]);
             }
         }
-        else
-        {
-            HAL_GPIO_TogglePin(DEBUG3_GPIO_Port, DEBUG3_Pin);
-        }
 
         __IO ETH_DMADescTypeDef *dmarxdesc;
         /* Release descriptors to DMA */
