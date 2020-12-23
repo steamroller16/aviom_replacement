@@ -6,6 +6,7 @@ Description :
 ------------------------------------------------------------------------------*/
 
 /* Includes ------------------------------------------------------------------*/
+#include <stdbool.h>
 #include "main.h"
 
 #include "AWECore.h"
@@ -14,7 +15,9 @@ Description :
 #include "Errors.h"
 #include "ModuleList.h"
 
+#include "awe_interface.h"
 #include "awe_tuning_hw_interface.h"
+#include "sound_card_interface.h"
 
 
 /* Local Macros/Constants/Structures -----------------------------------------*/
@@ -57,6 +60,8 @@ static const UINT32 ModuleDescriptorTableSize = sizeof(ModuleDescriptorTable) / 
 // AWE IO pins (not physical GPIO pins)
 static IOPinDescriptor s_InputPin =  { 0 };
 static IOPinDescriptor s_OutputPin = { 0 };
+
+static bool DeferredProcessingRequired = false;
 
 
 /* Private Function Prototypes -----------------------------------------------*/
@@ -112,54 +117,46 @@ void AweInterface_Init(void)
     AweTuningHwInterface_Init(&AweInstance);
 }
 
-#if 0
+
 //-----------------------------------------------------------------------------
 // METHOD:  BSP_AUDIO_IN_DMA_Handler
 // PURPOSE: Interrupt handler - called each time a frame of audio received
 //-----------------------------------------------------------------------------
-void BSP_AUDIO_IN_DMA_Handler(void)
+void AweInterface_HandleInputSamplesBlock(int32_t *inputSamplesBlock)
 {
-    int nSamplesAvail;
-    INT16 * pUSBSamples;
     INT32 layoutMask;
     INT32 bAudioIsStarted;
     INT32 bLayoutValid;
 
-    // Collected USB playback samples from an ASRC component
-    pUSBSamples = USB_Playback_ASRCSamples;
-
     bAudioIsStarted = awe_audioIsStarted(&AweInstance);
     bLayoutValid = awe_layoutIsValid(&AweInstance);
+
+    int32_t *outputSamplesBlock = SoundCardInterface_GetAudioSamplesBuffer();
 
     // If no audio processing running
     if (!bAudioIsStarted)
     {
         // Output zeros (silence)
-        memset(AudioBufferOut, 0, sizeof(AudioBufferOut) );
+        memset(outputSamplesBlock, 0, AWE_INTERFACE_AUDIO_BLOCK_SIZE * AWE_INTERFACE_NUM_OUTPUT_CHANNELS * sizeof(*outputSamplesBlock));
+        SoundCardInterface_NotifySamplesBufferFull(outputSamplesBlock);
     }
     else
     {
         // Audio playing but no AWD layout loaded
         if (!bLayoutValid)
         {
-            // Copy the CODEC stereo input to the CODEC stereo output
-            memcpy(&AudioBufferOut[nOutWriteNdx], &AudioBufferIn[nInReadNdx], STEREO_BLOCK_SIZE_IN_SAMPLES * PCM_SIZE_IN_BYTES);
+            // TODO: properly copy first two channels to the output
+            // memcpy(&outputSamplesBlock[0], &inputSamplesBlock[0], AWE_INTERFACE_AUDIO_BLOCK_SIZE * sizeof(int32_t));
+            SoundCardInterface_NotifySamplesBufferFull(outputSamplesBlock);
         }
         else
         {
-            // Insert the received USB samples into the AudioWeaver buffer
-            awe_audioImportSamples(&AweInstance, pUSBSamples, STRIDE2, CHANNEL1, Sample16bit);
-            awe_audioImportSamples(&AweInstance, &pUSBSamples[1], STRIDE2, CHANNEL2, Sample16bit);
-
-            // Insert the received CODEC samples into the AudioWeaver buffer
-            awe_audioImportSamples(&AweInstance, &AudioBufferIn[nInReadNdx], STRIDE2, CHANNEL3, Sample16bit);
-            awe_audioImportSamples(&AweInstance, &AudioBufferIn[nInReadNdx + 1], STRIDE2, CHANNEL4, Sample16bit);
-
-            // Insert the received Mic samples into the AudioWeaver buffer
-            awe_audioImportSamples(&AweInstance, &MicBufferIn[nMicReadBufferNdx], STRIDE1, CHANNEL5, Sample16bit);
-            awe_audioImportSamples(&AweInstance, &MicBufferIn[nMicReadBufferNdx + AUDIO_BLOCK_SIZE], STRIDE1, CHANNEL6, Sample16bit);
-            awe_audioImportSamples(&AweInstance, &MicBufferIn[nMicReadBufferNdx + (AUDIO_BLOCK_SIZE * 2)], STRIDE1, CHANNEL7, Sample16bit);
-            awe_audioImportSamples(&AweInstance, &MicBufferIn[nMicReadBufferNdx + (AUDIO_BLOCK_SIZE * 3)], STRIDE1, CHANNEL8, Sample16bit);
+            // Insert the received samples into the AudioWeaver buffer
+            uint8_t channelNum;
+            for (channelNum = 0; channelNum < AWE_INTERFACE_NUM_INPUT_CHANNELS; channelNum++)
+            {
+                awe_audioImportSamples(&AweInstance, &inputSamplesBlock[channelNum], AWE_INTERFACE_NUM_INPUT_CHANNELS, channelNum, Sample32bit);
+            }
 
             layoutMask = awe_audioGetPumpMask(&AweInstance);
 
@@ -168,42 +165,34 @@ void BSP_AUDIO_IN_DMA_Handler(void)
                 // If higher priority level processing ready pend an interrupt for it
                 if (layoutMask & 1)
                 {
-                    if (!g_bAudioPump1Active)
-                    {
-                        NVIC_SetPendingIRQ(AudioWeaverPump_IRQ1);
-                    }
+                    // if (!g_bAudioPump1Active)
+                    // {
+                        // NVIC_SetPendingIRQ(AudioWeaverPump_IRQ1);
+                    // }
+                    DeferredProcessingRequired |= awe_audioPump(&AweInstance, 0);
                 }
 
                 // If lower priority level processing ready pend an interrupt for it
                 if (layoutMask & 2)
                 {
-                    if (!g_bAudioPump2Active)
-                    {
-                        NVIC_SetPendingIRQ(AudioWeaverPump_IRQ2);
-                    }
+                    // if (!g_bAudioPump2Active)
+                    // {
+                        // NVIC_SetPendingIRQ(AudioWeaverPump_IRQ2);
+                    // }
+                    DeferredProcessingRequired |= awe_audioPump(&AweInstance, 1);
                 }
             }
 
-            // Insert the processed Audio Weaver samples into the CODEC output buffer
-            awe_audioExportSamples(&AweInstance,  &AudioBufferOut[nOutWriteNdx], STRIDE2, CHANNEL1, Sample16bit);
-            awe_audioExportSamples(&AweInstance,  &AudioBufferOut[nOutWriteNdx + 1], STRIDE2, CHANNEL2, Sample16bit);
-
-            // Insert the processed Audio Weaver samples into the USB output buffer
-            awe_audioExportSamples(&AweInstance,  USB_Record_ASRCSamples, STRIDE2, CHANNEL3, Sample16bit);
-            awe_audioExportSamples(&AweInstance,  &USB_Record_ASRCSamples[1], STRIDE2, CHANNEL4, Sample16bit);
+            for (channelNum = 0; channelNum < AWE_INTERFACE_NUM_OUTPUT_CHANNELS; channelNum++)
+            {
+                awe_audioExportSamples(&AweInstance, &outputSamplesBlock[channelNum], AWE_INTERFACE_NUM_OUTPUT_CHANNELS, channelNum, Sample32bit);
+            }
+            SoundCardInterface_NotifySamplesBufferFull(outputSamplesBlock);
         }
     }
-
-    // Switch double buffers
-    nInReadNdx = (nInReadNdx + STEREO_BLOCK_SIZE_IN_SAMPLES) % INPUT_AUDIO_BUFFER_SIZE;
-
-    nMicReadBufferNdx  = (nMicReadBufferNdx + NEW_MIC_BUFFER_SAMPLES) % MIC_BUFF_SIZE;
-
-    nOutWriteNdx = (nOutWriteNdx + STEREO_BLOCK_SIZE_IN_SAMPLES) % OUTPUT_AUDIO_BUFFER_SIZE;
-
 }   // End BSP_AUDIO_IN_DMA_Handler
 
-
+#if 0
 //-----------------------------------------------------------------------------
 // METHOD:  AudioWeaver Pump Interrupt Handler
 // PURPOSE: Perform AudioWeaver Processing
@@ -236,71 +225,56 @@ void AudioWeaverPump_IRQHandler2(void)
     g_bAudioPump2Active = FALSE;
 
 }   // End AudioWeaverPump_IRQHandler
-
+#endif
 
 //-----------------------------------------------------------------------------
 // METHOD:  AWEIdleLoop
 // PURPOSE: AWE Idle loop processing
 //-----------------------------------------------------------------------------
-void AWEIdleLoop(void)
+void AweInterface_MainLoopProcess(void)
 {
-    BOOL bMoreProcessingRequired = FALSE;
+    bool moreProcessingRequired = false;
 
-    while(TRUE)
+   // Process any local controls
+    if (awe_audioIsStarted(&AweInstance))
     {
-        // Set if a packet is received over USB HID
-        if (g_bPacketReceived)
+        UINT32 classID;
+        INT32 nValue;
+
+        // Perform any needed deferred processing
+        while (DeferredProcessingRequired || moreProcessingRequired)
         {
-            g_bPacketReceived = FALSE;
-
-            // Process the received packet
-            awe_packetProcess(&AweInstance);
-
-            // Send the reply over USB HID
-            USBSendReply(&AweInstance);
+            DeferredProcessingRequired = false;
+            moreProcessingRequired = awe_deferredSetCall(&AweInstance);
         }
 
-       // Process any local controls
-        if (awe_audioIsStarted(&AweInstance) )
+        #if 0
+        // Does the current AWE model have a SinkInt module with this control object ID?
+        if (awe_ctrlGetModuleClass(&AweInstance, AWE_SinkInt1_value_HANDLE, &classID) == OBJECT_FOUND)
         {
-            UINT32 classID;
-            INT32 nValue;
-
-            // Perform any needed deferred processing
-            if (g_bDeferredProcessingRequired || bMoreProcessingRequired)
+            // Check that module assigned this object ID is of module class SinkInt
+            if (classID == AWE_SinkInt1_classID)
             {
-                g_bDeferredProcessingRequired = FALSE;
-                bMoreProcessingRequired = awe_deferredSetCall(&AweInstance);
-            }
+                // SinkInt module (gets nValue from the running layout)
+                awe_ctrlGetValue(&AweInstance, AWE_SinkInt1_value_HANDLE, &nValue, 0, 1);
 
-            // Does the current AWE model have a SinkInt module with this control object ID?
-            if (awe_ctrlGetModuleClass(&AweInstance, AWE_SinkInt1_value_HANDLE, &classID) == OBJECT_FOUND)
-            {
-                // Check that module assigned this object ID is of module class SinkInt
-                if (classID == AWE_SinkInt1_classID)
-                {
-                    // SinkInt module (gets nValue from the running layout)
-                    awe_ctrlGetValue(&AweInstance, AWE_SinkInt1_value_HANDLE, &nValue, 0, 1);
-
-                }
-            }
-
-            // Does the current AWE model have a DCSourceInt module with this control object ID?
-            if (awe_ctrlGetModuleClass(&AweInstance, AWE_DC1_value_HANDLE, &classID) == OBJECT_FOUND)
-            {
-                // Check that module assigned this object ID is of module class DCSourceInt
-                if (classID == AWE_DC1_classID)
-                {
-                    // DCSourceInt module (returns nValue to the running layout)
-                    awe_ctrlSetValue(&AweInstance, AWE_DC1_value_HANDLE, &nValue, 0, 1);
-                }
             }
         }
-    }   // End while
+
+        // Does the current AWE model have a DCSourceInt module with this control object ID?
+        if (awe_ctrlGetModuleClass(&AweInstance, AWE_DC1_value_HANDLE, &classID) == OBJECT_FOUND)
+        {
+            // Check that module assigned this object ID is of module class DCSourceInt
+            if (classID == AWE_DC1_classID)
+            {
+                // DCSourceInt module (returns nValue to the running layout)
+                awe_ctrlSetValue(&AweInstance, AWE_DC1_value_HANDLE, &nValue, 0, 1);
+            }
+        }
+        #endif
+    }
 
 }   // End AWEIdleLoop
-
-#endif
 
 
 //-----------------------------------------------------------------------------

@@ -8,6 +8,7 @@ Description :
 #define AWE_INTERFACE_H
 
 /* Includes ------------------------------------------------------------------*/
+#include <stdint.h>
 
 
 /* Public Macros/Constants/Structures ----------------------------------------*/
@@ -22,6 +23,8 @@ Description :
 
 /* Public Function Declarations ----------------------------------------------*/
 void AweInterface_Init(void);
+void AweInterface_MainLoopProcess(void);
+void AweInterface_HandleInputSamplesBlock(int32_t *inputSamplesBlock);
 
 
 #endif
