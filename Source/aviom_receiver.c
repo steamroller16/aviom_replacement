@@ -33,7 +33,7 @@ static int32_t SinTable[] = {
     0, 0, 27, 27, 53, 53, 80, 80, 106, 106, 132, 132, 158, 158, 183, 183, 208, 208, 232, 232, 255, 255, 278, 278, 300, 300, 322, 322, 342, 342, 361, 361, 380, 380, 397, 397, 413, 413, 429, 429, 443, 443, 455, 455, 467, 467, 477, 477, 486, 486, 494, 494, 500, 500, 505, 505, 508, 508, 510, 510, 511, 511, 510, 510, 508, 508, 505, 505, 500, 500, 494, 494, 486, 486, 477, 477, 467, 467, 455, 455, 443, 443, 429, 429, 413, 413, 397, 397, 380, 380, 361, 361, 342, 342, 322, 322, 300, 300, 278, 278, 256, 256, 232, 232, 208, 208, 183, 183, 158, 158, 132, 132, 106, 106, 80, 80, 53, 53, 27, 27, 0, 0, -27, -27, -53, -53, -80, -80, -106, -106, -132, -132, -158, -158, -183, -183, -208, -208, -232, -232, -255, -255, -278, -278, -300, -300, -322, -322, -342, -342, -361, -361, -380, -380, -397, -397, -413, -413, -429, -429, -443, -443, -455, -455, -467, -467, -477, -477, -486, -486, -494, -494, -500, -500, -505, -505, -508, -508, -510, -510, -511, -511, -510, -510, -508, -508, -505, -505, -500, -500, -494, -494, -486, -486, -477, -477, -467, -467, -455, -455, -443, -443, -429, -429, -413, -413, -397, -397, -380, -380, -361, -361, -342, -342, -322, -322, -300, -300, -278, -278, -256, -256, -232, -232, -208, -208, -183, -183, -158, -158, -132, -132, -106, -106, -80, -80, -53, -53, -27, -27,
 };
 
-static int32_t AudioSamplesBuffer[AUDIO_SAMPLES_BUFFER_LENGTH][NUM_INPUT_CHANNELS];
+static int32_t AudioSamplesBuffer[AWE_INTERFACE_AUDIO_BLOCK_SIZE][AWE_INTERFACE_NUM_INPUT_CHANNELS];
 static uint8_t AudioSamplesBufferIndex = 0;
 
 
@@ -81,7 +81,7 @@ void AviomReceiver_MainLoopProcess(void)
         HAL_GPIO_WritePin(DEBUG4_GPIO_Port, DEBUG4_Pin, GPIO_PIN_SET);
         HAL_I2S_Transmit_IT(&hi2s2, (uint16_t *)AudioSamplesBuffer[0][AudioSamplesBufferOutdex], 64*2);
         AudioSamplesBufferOutdex += 64;
-        if (AudioSamplesBufferOutdex >= AUDIO_SAMPLES_BUFFER_LENGTH)
+        if (AudioSamplesBufferOutdex >= AWE_INTERFACE_AUDIO_BLOCK_SIZE)
         {
             AudioSamplesBufferOutdex = 0;
         }
@@ -115,7 +115,7 @@ void HAL_ETH_RxCpltCallback(ETH_HandleTypeDef *dummy)
             }
             AudioSamplesBufferIndex++;
 
-            if (AudioSamplesBufferIndex == AUDIO_SAMPLES_BUFFER_LENGTH)
+            if (AudioSamplesBufferIndex == AWE_INTERFACE_AUDIO_BLOCK_SIZE)
             {
                 AudioSamplesBufferIndex = 0;
                 // TODO: add samples to AWE

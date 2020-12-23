@@ -11,6 +11,10 @@ Description :
 
 
 /* Public Macros/Constants/Structures ----------------------------------------*/
+/* Define number of input and output channels */
+#define AWE_INTERFACE_NUM_INPUT_CHANNELS    (16)
+#define AWE_INTERFACE_NUM_OUTPUT_CHANNELS   (2)
+#define AWE_INTERFACE_AUDIO_BLOCK_SIZE      (32)
 
 
 /* Public Variables ----------------------------------------------------------*/

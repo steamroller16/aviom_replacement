@@ -27,16 +27,11 @@ Description :
 #define PROFILE_SPEED           (192e6f)
 #define NUM_AUDIO_THREADS       (1)
 #define AUDIO_SAMPLE_RATE       (48000.0f)
-#define AUDIO_BLOCK_SIZE        (32)
 
 // Specify the size of each of the heaps on this target
 #define MASTER_HEAP_SIZE        (1024*5)
 #define FASTB_HEAP_SIZE         (1024*5)
 #define SLOW_HEAP_SIZE          (1024*5)
-
-/* Define number of input and output channels */
-#define NUM_INPUT_CHANNELS      (2)
-#define NUM_OUTPUT_CHANNELS     (2)
 
 
 /* Public Global Variables ---------------------------------------------------*/
@@ -82,8 +77,8 @@ void AweInterface_Init(void)
     // Setup AWE IO pins
     AweInstance.pInputPin = &s_InputPin;
     AweInstance.pOutputPin = &s_OutputPin;
-    awe_initPin(&s_InputPin, NUM_INPUT_CHANNELS, NULL);
-    awe_initPin(&s_OutputPin, NUM_OUTPUT_CHANNELS, NULL);
+    awe_initPin(&s_InputPin, AWE_INTERFACE_NUM_INPUT_CHANNELS, NULL);
+    awe_initPin(&s_OutputPin, AWE_INTERFACE_NUM_OUTPUT_CHANNELS, NULL);
 
     // Fill in various parameters
     AweInstance.userVersion = USER_VERSION;
@@ -95,7 +90,7 @@ void AweInterface_Init(void)
     AweInstance.pModuleDescriptorTable = ModuleDescriptorTable;
     AweInstance.numModules = ModuleDescriptorTableSize;
     AweInstance.sampleRate = AUDIO_SAMPLE_RATE;
-    AweInstance.fundamentalBlockSize = AUDIO_BLOCK_SIZE;
+    AweInstance.fundamentalBlockSize = AWE_INTERFACE_AUDIO_BLOCK_SIZE;
 
     // Define the heap sizes and ram
     AweInstance.fastHeapASize = MASTER_HEAP_SIZE;
