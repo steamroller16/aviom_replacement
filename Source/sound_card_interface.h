@@ -17,6 +17,7 @@ Description : Interface to I2S sound card
 
 
 /* Public Function Declarations ----------------------------------------------*/
+void SoundCardInterface_Init(void);
 int32_t * SoundCardInterface_GetAudioSamplesBuffer(void);
 void SoundCardInterface_NotifySamplesBufferFull(int32_t *samplesBuffer);
 

@@ -22,6 +22,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "sound_card_interface.h"
 #include "aviom_receiver.h"
 #include "awe_interface.h"
 /* USER CODE END Includes */
@@ -113,6 +114,7 @@ int main(void)
   MX_USB_OTG_FS_PCD_Init();
   MX_I2S2_Init();
   /* USER CODE BEGIN 2 */
+  SoundCardInterface_Init();
   AviomReceiver_Init();
   AweInterface_Init();
   /* USER CODE END 2 */

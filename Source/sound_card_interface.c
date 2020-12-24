@@ -6,29 +6,134 @@ Description : Interface to I2S sound card
 ------------------------------------------------------------------------------*/
 
 /* Includes ------------------------------------------------------------------*/
+#include <stdbool.h>
+#include <string.h>
+
+#include "main.h"
+
 #include "awe_interface.h"
 
 
 /* Local Macros/Constants/Structures -----------------------------------------*/
+typedef enum {
+    BUFFER1,
+    BUFFER2,
+} BufferNum_t;
 
 
 /* Public Global Variables ---------------------------------------------------*/
+extern I2S_HandleTypeDef hi2s2;
 
 
 /* Private Global Variables --------------------------------------------------*/
-static int32_t AudioSamplesBuffer[AWE_INTERFACE_AUDIO_BLOCK_SIZE][AWE_INTERFACE_NUM_OUTPUT_CHANNELS];
+static int32_t SamplesBufferZeros[AWE_INTERFACE_AUDIO_BLOCK_SIZE][AWE_INTERFACE_NUM_OUTPUT_CHANNELS];
+static int32_t SamplesBuffer1[AWE_INTERFACE_AUDIO_BLOCK_SIZE][AWE_INTERFACE_NUM_OUTPUT_CHANNELS];
+static int32_t SamplesBuffer2[AWE_INTERFACE_AUDIO_BLOCK_SIZE][AWE_INTERFACE_NUM_OUTPUT_CHANNELS];
+
+static bool SamplesBuffer1Full = false;
+static bool SamplesBuffer2Full = false;
+
+static BufferNum_t LastFilledBuffer = BUFFER2;
+static BufferNum_t LastTransmittedBuffer = BUFFER2;
+
+static bool TransmissionIsActive = false;
 
 
 /* Private Function Prototypes -----------------------------------------------*/
 
 
 /* Function Implementations --------------------------------------------------*/
+void SoundCardInterface_Init(void)
+{
+    SamplesBuffer1Full = false;
+    SamplesBuffer2Full = false;
+
+    LastFilledBuffer = BUFFER2;
+    LastTransmittedBuffer = BUFFER2;
+
+    TransmissionIsActive = false;
+}
+
+void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s)
+{
+    if (LastTransmittedBuffer == BUFFER1)
+    {
+        if (SamplesBuffer2Full)
+        {
+            HAL_I2S_Transmit_IT(&hi2s2, (uint16_t *)&SamplesBuffer2[0][0], AWE_INTERFACE_AUDIO_BLOCK_SIZE * AWE_INTERFACE_NUM_OUTPUT_CHANNELS);
+            SamplesBuffer2Full = false;
+            LastTransmittedBuffer = BUFFER2;
+        }
+        else
+        {
+            TransmissionIsActive = false;
+        }
+    }
+    else if (LastTransmittedBuffer == BUFFER2)
+    {
+        if (SamplesBuffer1Full)
+        {
+            HAL_I2S_Transmit_IT(&hi2s2, (uint16_t *)&SamplesBuffer1[0][0], AWE_INTERFACE_AUDIO_BLOCK_SIZE * AWE_INTERFACE_NUM_OUTPUT_CHANNELS);
+            SamplesBuffer1Full = false;
+            LastTransmittedBuffer = BUFFER1;
+        }
+        else
+        {
+            TransmissionIsActive = false;
+        }
+    }
+}
+
 int32_t * SoundCardInterface_GetAudioSamplesBuffer(void)
 {
-    return &AudioSamplesBuffer[0][0];
+    if (LastFilledBuffer == BUFFER1)
+    {
+        return &SamplesBuffer2[0][0];
+    }
+    else if (LastFilledBuffer == BUFFER2)
+    {
+        return &SamplesBuffer1[0][0];
+    }
+    else
+    {
+        // What!?
+        return &SamplesBuffer1[0][0];
+    }
 }
 
 void SoundCardInterface_NotifySamplesBufferFull(int32_t *samplesBuffer)
 {
-    return;
+    if (samplesBuffer == &SamplesBuffer1[0][0])
+    {
+        LastFilledBuffer = BUFFER1;
+        SamplesBuffer1Full = true;
+    }
+    else if (samplesBuffer == &SamplesBuffer2[0][0])
+    {
+        LastFilledBuffer = BUFFER2;
+        SamplesBuffer2Full = true;
+    }
+    else
+    {
+        // What!?
+    }
+
+    if (!TransmissionIsActive)
+    {
+        if (LastFilledBuffer == BUFFER1)
+        {
+            LastTransmittedBuffer = BUFFER2;
+        }
+        else if (LastFilledBuffer == BUFFER2)
+        {
+            LastTransmittedBuffer = BUFFER1;
+        }
+        else
+        {
+            // What!?
+        }
+
+        TransmissionIsActive = true;
+        HAL_I2S_Transmit_IT(&hi2s2, (uint16_t *)&SamplesBufferZeros[0][0], AWE_INTERFACE_AUDIO_BLOCK_SIZE/2 * AWE_INTERFACE_NUM_OUTPUT_CHANNELS);
+    }
 }
