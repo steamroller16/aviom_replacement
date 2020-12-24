@@ -58,10 +58,10 @@ void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s)
 {
     if (LastTransmittedBuffer == BUFFER1)
     {
+        SamplesBuffer1Full = false;
         if (SamplesBuffer2Full)
         {
             HAL_I2S_Transmit_DMA(&hi2s2, (uint16_t *)&SamplesBuffer2[0][0], AWE_INTERFACE_AUDIO_BLOCK_SIZE * AWE_INTERFACE_NUM_OUTPUT_CHANNELS);
-            SamplesBuffer2Full = false;
             LastTransmittedBuffer = BUFFER2;
         }
         else
@@ -71,10 +71,10 @@ void HAL_I2S_TxCpltCallback(I2S_HandleTypeDef *hi2s)
     }
     else if (LastTransmittedBuffer == BUFFER2)
     {
+        SamplesBuffer2Full = false;
         if (SamplesBuffer1Full)
         {
             HAL_I2S_Transmit_DMA(&hi2s2, (uint16_t *)&SamplesBuffer1[0][0], AWE_INTERFACE_AUDIO_BLOCK_SIZE * AWE_INTERFACE_NUM_OUTPUT_CHANNELS);
-            SamplesBuffer1Full = false;
             LastTransmittedBuffer = BUFFER1;
         }
         else
