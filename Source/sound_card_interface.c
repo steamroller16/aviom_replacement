@@ -26,7 +26,7 @@ extern I2S_HandleTypeDef hi2s2;
 
 
 /* Private Global Variables --------------------------------------------------*/
-static int32_t SamplesBufferZeros[AWE_INTERFACE_AUDIO_BLOCK_SIZE][AWE_INTERFACE_NUM_OUTPUT_CHANNELS];
+static int32_t SamplesBufferZeros[AWE_INTERFACE_AUDIO_BLOCK_SIZE/2][AWE_INTERFACE_NUM_OUTPUT_CHANNELS];
 static int32_t SamplesBuffer1[AWE_INTERFACE_AUDIO_BLOCK_SIZE][AWE_INTERFACE_NUM_OUTPUT_CHANNELS];
 static int32_t SamplesBuffer2[AWE_INTERFACE_AUDIO_BLOCK_SIZE][AWE_INTERFACE_NUM_OUTPUT_CHANNELS];
 
