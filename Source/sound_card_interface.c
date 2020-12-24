@@ -101,6 +101,7 @@ int32_t * SoundCardInterface_GetAudioSamplesBuffer(void)
     }
 }
 
+__attribute__((optimize("unroll-loops")))
 void SoundCardInterface_NotifySamplesBufferFull(int32_t *samplesBuffer)
 {
     if (samplesBuffer == &SamplesBuffer1[0][0])
