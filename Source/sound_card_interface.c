@@ -105,26 +105,22 @@ void SoundCardInterface_NotifySamplesBufferFull(int32_t *samplesBuffer)
 {
     if (samplesBuffer == &SamplesBuffer1[0][0])
     {
-        uint8_t i,j;
-        for (i=0; i<AWE_INTERFACE_AUDIO_BLOCK_SIZE; i++)
+        uint8_t i;
+        uint32_t *samplesBufferU32 = (uint32_t *)&SamplesBuffer1[0][0];
+        for (i=0; i<AWE_INTERFACE_AUDIO_BLOCK_SIZE*AWE_INTERFACE_NUM_OUTPUT_CHANNELS; i++)
         {
-            for (j=0; j<AWE_INTERFACE_NUM_OUTPUT_CHANNELS; j++)
-            {
-                SamplesBuffer1[i][j] = (((uint32_t)SamplesBuffer1[i][j]) >> 16) | (SamplesBuffer1[i][j] << 16);
-            }
+            samplesBufferU32[i] = (samplesBufferU32[i] >> 16) | (samplesBufferU32[i] << 16);
         }
         LastFilledBuffer = BUFFER1;
         SamplesBuffer1Full = true;
     }
     else if (samplesBuffer == &SamplesBuffer2[0][0])
     {
-        uint8_t i,j;
-        for (i=0; i<AWE_INTERFACE_AUDIO_BLOCK_SIZE; i++)
+        uint8_t i;
+        uint32_t *samplesBufferU32 = (uint32_t *)&SamplesBuffer2[0][0];
+        for (i=0; i<AWE_INTERFACE_AUDIO_BLOCK_SIZE*AWE_INTERFACE_NUM_OUTPUT_CHANNELS; i++)
         {
-            for (j=0; j<AWE_INTERFACE_NUM_OUTPUT_CHANNELS; j++)
-            {
-                SamplesBuffer2[i][j] = (((uint32_t)SamplesBuffer2[i][j]) >> 16) | (SamplesBuffer2[i][j] << 16);
-            }
+            samplesBufferU32[i] = (samplesBufferU32[i] >> 16) | (samplesBufferU32[i] << 16);
         }
         LastFilledBuffer = BUFFER2;
         SamplesBuffer2Full = true;
